@@ -5,4 +5,5 @@
 /blogScrapy/extract_bak/
 /blogScrapy/links/
 /blogScrapy/temp_file/
-/blogScrapy/*
+/blogScrapy/main_text_extract/
+/.idea

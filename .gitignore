@@ -2,8 +2,10 @@
 # WRYYYYYYYYYYYYYYYYYYYYYYYYYYYY #
 ##################################
 
-/blogScrapy/extract_bak/
 /blogScrapy/links/
-/blogScrapy/temp_file/
 /blogScrapy/main_text_extract/
+/blogScrapy/json_data/
+/blogScrapy/log/
+/blogScrapy/temp/
+/blogScrapy/raw_html/
 /.idea

@@ -1,0 +1,10 @@
+scrapy crawl img_crawl -a target=trendmicro_spam
+scrapy crawl img_crawl -a target=trendmicro_malware
+scrapy crawl img_crawl -a target=fsecure
+scrapy crawl img_crawl -a target=zscaler
+scrapy crawl img_crawl -a target=welivesecurity
+scrapy crawl img_crawl -a target=unit42
+scrapy crawl img_crawl -a target=symantecthreatintelligence
+scrapy crawl img_crawl -a target=spiderlabs
+scrapy crawl img_crawl -a target=trustwave
+scrapy crawl img_crawl -a target=sophos

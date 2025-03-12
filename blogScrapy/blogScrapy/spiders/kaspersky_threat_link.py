@@ -19,7 +19,7 @@ class KasperskyThreatSpider(scrapy.Spider):
     start_urls = ["https://threats.kaspersky.com/en/threat/"]
 
     # 用于和页数拼接
-    page_base_url = "https://threats.kaspersky.com/en/vulnerability/?paged="
+    page_base_url = "https://threats.kaspersky.com/en/threat/?paged="
 
     # 请求头Headers
     headers = {

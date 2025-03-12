@@ -97,8 +97,6 @@ class ImgCrawlSpider(scrapy.Spider):
 
         image_items = self.get_target_img_items()
 
-        return []
-
         self.fumo_bar = tqdm(total=len(image_items), desc='勤劳的Fumo正在工作 ᗜᴗᗜ ...', unit="page")
 
         for image_item in image_items:

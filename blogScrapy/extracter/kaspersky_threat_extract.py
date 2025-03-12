@@ -17,7 +17,7 @@ from typing import TYPE_CHECKING, Any, cast
 
 # Comment 增加了链接去重功能
 
-website_name = 'kaspersky_vulnerability'
+website_name = 'kaspersky_threat'
 
 # 弃用，已改为自动解析
 domain = "https://threats.kaspersky.com"
@@ -83,7 +83,7 @@ if __name__ == '__main__':
         tags = []
         # print('tags:', tags)
 
-        date = dom.xpath('//div[@class="content-header__left"]/div[@class="content-header__item"][2]/div[@class="content-header__value"]/text()')
+        date = dom.xpath('//div[@class="content-header__left"]/div[@class="content-header__item"][1]/div[@class="content-header__value"]/text()')
         date = date[0] if date else ''
         # print('date:', date)
 

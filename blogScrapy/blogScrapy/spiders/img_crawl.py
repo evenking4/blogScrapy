@@ -83,7 +83,7 @@ class ImgCrawlSpider(scrapy.Spider):
             except Exception as e:
                 print(f"读取{uuid}图片信息时出现错误{str(e)}")
 
-        self.myLog.info(f'总共有图片{all_image_num}张,已爬取{all_image_num - len(image_items)}张，还剩{len(image_items)}张未爬，完成率为{((all_image_num - len(image_items)) / all_image_num) * 100}%')
+        self.myLog.info(f'网站:{self.website_name},总共有图片{all_image_num}张,已爬取{all_image_num - len(image_items)}张，还剩{len(image_items)}张未爬，完成率为{((all_image_num - len(image_items)) / all_image_num) * 100}%')
 
         return image_items
 

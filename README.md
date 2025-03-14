@@ -38,6 +38,19 @@ python版本: 3.11.2
                 |- img_infos.json   # report中所有的图片的信息和url
 ```
 
+## 关于使用Selenium爬取图片
+注：由于该方法爬取图片较慢，请仅针对那些爬取率已为0的网站使用。
+使用方法：
+将settings.py中的DOWNLOADER_MIDDLEWARES中的"blogScrapy.middlewares.SeleniumImageDownloaderMiddleware": 400取消注释，如下所示即可
+```python
+DOWNLOADER_MIDDLEWARES = {
+   "blogScrapy.middlewares.SeleniumImageDownloaderMiddleware": 400,
+   # "blogScrapy.middlewares.SeleniumMiddleware": 500,
+   # "blogScrapy.middlewares.PauseMiddleware": 600,
+}
+```
+之后运行img_crawl时开头日志出现`MiddleWare - INFO - Selenium Img Crawl Start...`表示添加成功
+
 ## 关于服务器爬取图片的指南（省流版）
 1. 参考上面配置好环境
 2. 将main_content文件夹放置到对应位置

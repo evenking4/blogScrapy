@@ -13,8 +13,10 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 from webdriver_manager.chrome import ChromeDriverManager
+import requests
 import logging
 import time
+import os
 
 # useful for handling different item types with a single interface
 from itemadapter import is_item, ItemAdapter
@@ -119,9 +121,8 @@ class BlogscrapyDownloaderMiddleware:
         spider.logger.info("Spider opened: %s" % spider.name)
 
 class SeleniumMiddleware(object):
-    def process_request(self, request, spider):
-        url = request.url
 
+    def __init__(self):
         # 配置 ChromeOptions
         options = Options()
         options.add_argument('--headless')
@@ -134,16 +135,20 @@ class SeleniumMiddleware(object):
         options.add_argument('--disable-dev-shm-usage')  # 防止内存不足错误
         options.add_argument('--window-size=1920x1080')  # 指定窗口大小以避免页面渲染异常
 
-        browser = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+        self.browser = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+
+
+    def process_request(self, request, spider):
+        url = request.url
 
         try:
-            browser.get(url)
+            self.browser.get(url)
 
-            WebDriverWait(browser, 20).until(
+            WebDriverWait(self.browser, 20).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, "body"))  # 修改为页面上需要的关键元素
             )
 
-            html = browser.page_source
+            html = self.browser.page_source
             return HtmlResponse(url=request.url,
                                 body=html,
                                 request=request,
@@ -153,24 +158,43 @@ class SeleniumMiddleware(object):
             return HtmlResponse(status=403)
 
         finally:
-            browser.quit()
+            self.browser.quit()
 
-class PauseMiddleware(object):
-    def __init__(self, crawler):
-        print('middleware init...')
-        self.lock_manager = crawler.lock_manager
+
+class SeleniumImageDownloaderMiddleware:
+    def __init__(self):
+        # 初始化 Selenium WebDriver
+        options = Options()
+        # options.add_argument('--headless')
+        options.add_argument('--ignore-certificate-errors')
+        options.add_experimental_option('excludeSwitches', ['enable-automation'])
+        options.add_experimental_option('excludeSwitches', ['enable-logging'])
+        options.add_argument('--allow-insecure-localhost')
+        options.add_argument('--disable-web-security')
+        options.add_argument('--disable-gpu')  # 禁用 GPU，加速无头模式渲染
+        options.add_argument('--disable-dev-shm-usage')  # 防止内存不足错误
+        options.add_argument('--window-size=1920x1080')  # 指定窗口大小以避免页面渲染异常
+
+        self.browser = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+        MiddleWareLog.info("Selenium Img Crawl Start...")
 
     @classmethod
     def from_crawler(cls, crawler):
-        return cls(crawler)
+        middleware = cls()
+        crawler.signals.connect(middleware.spider_closed, signal=signals.spider_closed)
+        return middleware
+
+    def spider_closed(self):
+        # 关闭 WebDriver
+        self.browser.quit()
 
     def process_request(self, request, spider):
-        # 阻塞直到锁被释放
-        self.lock_manager.acquire()
-        self.lock_manager.release()
+        # 仅处理带 'selenium' meta 的请求
+        # 用 Selenium 打开图片 URL
+        self.browser.get(request.url)
 
-    def process_response(self, request, response, spider):
-        if response.status == 429 and self.lock_manager.is_lock:
-            return request
-        else:
-            return response
+        # 获取图片数据
+        img_data = requests.get(request.url).content
+
+        # 返回 Response，让 Scrapy 的 Image Pipeline 处理
+        return HtmlResponse(url=request.url, body=img_data, encoding='utf-8', request=request)

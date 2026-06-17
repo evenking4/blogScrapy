@@ -18,6 +18,7 @@ class Paloaltospider(scrapy.Spider):
     website_name = "paloalto"
     name = "paloalto_link"
     allowed_domains = ["www.paloaltonetworks.com"]
+    # 占位
     start_urls = ["https://www.mcafee.com/blogs/mobile-security/",
                   "https://www.mcafee.com/blogs/internet-security/",
                   "https://www.mcafee.com/blogs/privacy-identity-protection/"]

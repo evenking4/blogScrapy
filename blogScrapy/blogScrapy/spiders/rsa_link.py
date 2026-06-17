@@ -67,7 +67,7 @@ class RsaSpider(scrapy.Spider):
         links = []
 
         # page_num xpath路径
-        page_num = int(response.xpath('//div[@class="pagination"]/a[last()-1]/text()').get())
+        page_num = int(response.xpath('//a[@class="page-numbers"][last()]/text()').get())
 
         # 小批量调试
         # page_num = 5
@@ -85,9 +85,8 @@ class RsaSpider(scrapy.Spider):
             self.myLog.error(f"从主页获取页数失败")
             return
 
-        # 文章链接的xpath路径
         links.extend(response.xpath(
-            '//a[@class="item-content"]/@href').getall())
+            '//article/a/@href').getall())
 
         links = list(set(links))
 
@@ -115,7 +114,8 @@ class RsaSpider(scrapy.Spider):
 
         # 文章链接的xpath的路径
         links.extend(response.xpath(
-            '//a[@class="item-content"]/@href').getall())
+            '//article/a/@href').getall())
+
 
         links = list(set(links))
 

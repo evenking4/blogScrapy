@@ -140,9 +140,9 @@ class HtmlCrawlSpider(scrapy.Spider):
         request = failure.request
         response = getattr(failure.value, "response", None)
         if response:
-            self.myLog.error(f"在请求URL:{request.url}时出现错误。状态码为{response.status}")
+            self.myLog.error(f"在请求URL: {request.url} 时出现错误。状态码为{response.status}")
         else:
-            self.myLog.error(f"在请求URL:{request.url}，且没有response")
+            self.myLog.error(f"在请求URL: {request.url} ，且没有response")
 
         # 移交给错误处理函数
         return self.handle_error(response, request)

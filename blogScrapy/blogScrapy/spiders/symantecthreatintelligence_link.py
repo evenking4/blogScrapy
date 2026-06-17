@@ -23,8 +23,8 @@ class Symantecthreatintelligencespider(scrapy.Spider):
     # 查询url
     query_base_url = "https://www.security.com/blogs/api/v1/blogs/search"
 
-    # TODO 需要自己设置文章篇数
-    article_num = 280
+    # TODO 需要自己设置大概得文章篇数（至少要大于真实的文章篇数，温馨提示上一次总共爬到了315篇）
+    article_num = 1000
 
     # 请求头Headers
     headers = {

@@ -7,5 +7,14 @@
 /blogScrapy/json_data/
 /blogScrapy/log/
 /blogScrapy/temp/
+/blogScrapy/test/
 /blogScrapy/raw_html/
+/blogScrapy/old_links/
 /.idea
+/.claude
+
+__pycache__/
+
+CLAUDE.md
+CLAUDE_ch.md
+

@@ -64,21 +64,21 @@ class FireeyeSpider(scrapy.Spider):
                       callback=self.test)
 
     def test(self, response):
-        with open("temp/fireeye.html", "r", encoding="utf-8") as f:
-            html_content = f.read()
+        for target in ['perspectives', 'platform', 'research']:
+            with open(f"temp/{target}.html", "r", encoding="utf-8") as f:
+                html_content = f.read()
 
-        sele = Selector(text=html_content)
+            sele = Selector(text=html_content)
 
-        links = [self.article_base_url + href for href in sele.xpath(
-            '//div[@id="Search"]//p[@class="mb-0"]/a/@href').getall()]
+            links =  sele.xpath('//div[@id="Search"]//p[@class="mb-0"]/a/@href').getall()
 
-        self.link_num += len(links)
+            self.link_num += len(links)
 
-        for link in links:
-            linkItem = LinkItem()
-            linkItem['uuid'] = uuid4().hex
-            linkItem['url'] = link
-            yield linkItem
+            for link in links:
+                linkItem = LinkItem()
+                linkItem['uuid'] = uuid4().hex
+                linkItem['url'] = link
+                yield linkItem
 
 
     def closed(self, reason):

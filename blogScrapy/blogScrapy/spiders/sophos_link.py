@@ -10,25 +10,22 @@ import os
 from twisted.internet.defer import Deferred
 from typing import TYPE_CHECKING, Any, cast
 
-# Comment 针对未指定最大页数的博客网站
-# Comment 通过开辟多个并行的请求链
-# Comment 既实现了自动确认了页数也利用异步请求提高了效率
-
+# Comment 增加了链接去重功能
 
 class Sophosspider(scrapy.Spider):
     website_name = "sophos"
     name = "sophos_link"
-    allowed_domains = ["news.sophos.com"]
-    start_urls = ["https://news.sophos.com/en-us/"]
+    allowed_domains = ["www.sophos.com"]
+    start_urls = ["https://www.sophos.com/en-us/blog?page=1"]
+
+    # 用于和页数拼接
+    page_base_url = "https://www.sophos.com/en-us/blog?page="
 
     # 请求头Headers
     headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36 Edg/132.0.0.0',
-        'Accept': 'application/json'
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7'
     }
-
-    # 任务链数量
-    interval_num = 10
 
     # 用于记录获取多少链接
     link_num = 0
@@ -57,28 +54,77 @@ class Sophosspider(scrapy.Spider):
 
     def start_requests(self):
         for url in self.start_urls:
-            for page_num in range(1, self.interval_num + 1):
-                yield Request(url=url + 'page/' + str(page_num),
-                              headers=self.headers,
-                              dont_filter=True,
-                              cb_kwargs={'page_base_url': url + 'page/', 'page_num': page_num},
-                              callback=self.get_article_links,
-                              errback=self.err_parse)
+            print("url:", url)
+            yield Request(url=url,
+                          headers=self.headers,
+                          dont_filter=True,
+                          callback=self.get_page_num,
+                          errback=self.err_parse)
 
-    def get_article_links(self, response, **kwargs):
-        page_num = kwargs['page_num']
+    # 从首页获取站点的全局信息，如有多少页数。
+    def get_page_num(self, response):
 
-        page_base_url = kwargs['page_base_url']
+        print("get_page_num")
 
+        # 用于存储链接
+        links = []
+
+        # page_num xpath路径
+        page_num = int(response.xpath('//button[@aria-current="page"]/span/text()').get())
+
+        print(page_num)
+        return
+        # 小批量调试
+        # page_num = 5
+
+        # 设置进度条
+        self.link_bar = tqdm(total=page_num, desc='fumo勤劳工作中 ᗜˬᗜ...', unit="page")
+
+        if page_num:
+
+            # 更新进度条
+            self.link_bar.update(1)
+
+            self.myLog.info(f"获取{self.website_name}主页成功，共有{page_num}页目录页")
+        else:
+            self.myLog.error(f"从主页获取页数失败")
+            return
+
+        links.extend(response.xpath(
+            '//article/a/@href').getall())
+
+        links = list(set(links))
+
+        self.myLog.info(f"首页共获取到{len(links)}个文章链接")
+        self.link_num += len(links)
+
+        for link in links:
+            linkItem = LinkItem()
+            linkItem['uuid'] = uuid4().hex
+            linkItem['url'] = link
+            yield linkItem
+
+        # 从其他导航页获取文章链接
+        for i in range(2, page_num + 1):
+            url = self.page_base_url + str(i)
+            yield Request(url=url,
+                          headers=self.headers,
+                          dont_filter=True,
+                          callback=self.get_article_links,
+                          errback=self.err_parse)
+
+    def get_article_links(self, response):
         # 用于存储链接
         links = []
 
         # 文章链接的xpath的路径
         links.extend(response.xpath(
-            '//a[@rel="bookmark"]/@href').getall())
+            '//article/a/@href').getall())
 
-        # 链接去重
+
         links = list(set(links))
+
+        self.link_bar.update(1)
 
         self.myLog.info(f"url:{response.request.url}共获取到{len(links)}个文章链接")
         self.link_num += len(links)
@@ -89,27 +135,17 @@ class Sophosspider(scrapy.Spider):
             linkItem['url'] = link
             yield linkItem
 
-        # 以一定间隔爬取下个导航页
-        yield Request(url=page_base_url + str(page_num + 10),
-                      headers=self.headers,
-                      dont_filter=True,
-                      cb_kwargs={'page_base_url': page_base_url, 'page_num': page_num + 10},
-                      callback=self.get_article_links,
-                      errback=self.err_parse)
-
     def err_parse(self, failure):
         response = failure.value.response
         request = failure.request
+        print(response.text)
         if response:
             self.myLog.error(f"在请求URL:{request.url}时出现错误。状态码为{response.status}")
         else:
             self.myLog.error(f"在请求URL:{request.url}，且没有response")
 
-        if response.status == 404:
-            return None
-        else:
-            # 移交给错误处理函数
-            return self.handle_error(response, request)
+        # 移交给错误处理函数
+        return self.handle_error(response, request)
 
     # 处理未爬取成功的请求。重爬，写入日志
     def handle_error(self, response, request):
@@ -130,7 +166,7 @@ class Sophosspider(scrapy.Spider):
                            meta={"retry_cnt": retry_cnt + 1},
                            errback=self.err_parse)
         else:
-            self.myLog.error(f"请求Url:{url}时出错次数超过最大重试次数！Retry num exceeded max!")
+            self.myLog.error(f"请求Url:{url}时出错次数超过最大重试次数！")
             return None
 
     def closed(self, reason):

@@ -15,16 +15,16 @@ from typing import TYPE_CHECKING, Any, cast
 class SpiderlabsSpider(scrapy.Spider):
     website_name = "spiderlabs"
     name = "spiderlabs_link"
-    allowed_domains = ["www.trustwave.com"]
-    start_urls = ["https://www.trustwave.com/en-us/resources/blogs/spiderlabs-blog/"]
+    allowed_domains = ["www.levelblue.com"]
+    start_urls = ["https://www.levelblue.com/blogs/spiderlabs-blog/"]
 
     # 用于和页数拼接
-    page_base_url = "https://www.trustwave.com/en-us/resources/blogs/spiderlabs-blog/page/"
+    page_base_url = "https://www.levelblue.com/blogs/spiderlabs-blog/page/"
 
     # 请求头Headers
     headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36 Edg/132.0.0.0',
-        'Accept': '*/*'
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
     }
 
     # 用于记录获取多少链接
@@ -55,7 +55,7 @@ class SpiderlabsSpider(scrapy.Spider):
     def start_requests(self):
 
         # TODO 需要自己设置最大页数
-        page_num = 60
+        page_num = 68
 
         for url in self.start_urls:
             for i in range(1, page_num + 1):
@@ -64,13 +64,14 @@ class SpiderlabsSpider(scrapy.Spider):
                               dont_filter=True,
                               callback=self.get_article_links,
                               errback=self.err_parse)
+    
     def get_article_links(self, response):
         # 用于存储链接
         links = []
 
         # 文章链接的xpath的路径
         links.extend(response.xpath(
-            '//div[@id="main-content"]//a[@title="Read More"]/@href').getall())
+            '//div[@id="main-content"]//a[contains(@class, "tw-blog__card")]/@href').getall())
 
         links = list(set(links))
 

@@ -70,8 +70,10 @@ class ForcepointSpider(scrapy.Spider):
         # 用于存储链接
         links = []
 
+        
         # page_num xpath路径
-        page_num = int(response.xpath('//nav[@class="mx-auto mb-lg max-w-lg"]/ul/li[1]/text()').get().split("of")[-1])
+        page_num = int(response.xpath('//*[@id="main-content"]//ul[@class="flex items-center"]//li[@class="items-center text-h4 font-semibold mx-auto flex-shrink-0"]/text()').get().split("of")[-1].strip())
+
 
         # 小批量调试
         # page_num = 5
@@ -91,7 +93,7 @@ class ForcepointSpider(scrapy.Spider):
 
         # 文章链接的xpath路径
         links.extend([self.article_base_url + href for href in set(response.xpath(
-            '//a[@target="_self"]/@href').getall())])
+            '//a[starts-with(@href, "/blog/x-labs/") or starts-with(@href, "/blog/insights/")]/@href').getall())])
 
         self.myLog.info(f"首页共获取到{len(links)}个文章链接")
         self.link_num += len(links)
@@ -117,7 +119,7 @@ class ForcepointSpider(scrapy.Spider):
 
         # 文章链接的xpath的路径
         links.extend([self.article_base_url + href for href in set(response.xpath(
-            '//a[@target="_self"]/@href').getall())])
+            '//a[starts-with(@href, "/blog/x-labs/") or starts-with(@href, "/blog/insights/")]/@href').getall())])
 
         self.link_bar.update(1)
 

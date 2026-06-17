@@ -123,32 +123,36 @@ class BlogscrapyDownloaderMiddleware:
 class SeleniumMiddleware(object):
 
     def __init__(self):
-        # 配置 ChromeOptions
-        options = Options()
-        options.add_argument('--headless')
-        options.add_argument('--ignore-certificate-errors')
-        options.add_experimental_option('excludeSwitches', ['enable-automation'])
-        options.add_experimental_option('excludeSwitches', ['enable-logging'])
-        options.add_argument('--allow-insecure-localhost')
-        options.add_argument('--disable-web-security')
-        options.add_argument('--disable-gpu')  # 禁用 GPU，加速无头模式渲染
-        options.add_argument('--disable-dev-shm-usage')  # 防止内存不足错误
-        options.add_argument('--window-size=1920x1080')  # 指定窗口大小以避免页面渲染异常
+        MiddleWareLog.info("启用Selenium下载器")
 
-        self.browser = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+        # 配置 ChromeOptions
+        self.options = Options()
+        self.options.add_argument('--headless=new')
+        self.options.add_argument('--no-sandbox')
+        self.options.add_argument('--ignore-certificate-errors')
+        self.options.add_experimental_option('excludeSwitches', ['enable-automation'])
+        self.options.add_experimental_option('excludeSwitches', ['enable-logging'])
+        self.options.add_argument('--allow-insecure-localhost')
+        self.options.add_argument('--disable-web-security')
+        self.options.add_argument('--disable-gpu')  # 禁用 GPU，加速无头模式渲染
+        self.options.add_argument('--disable-dev-shm-usage')  # 防止内存不足错误
+        self.options.add_argument('--window-size=1920x1080')  # 指定窗口大小以避免页面渲染异常
+        
 
 
     def process_request(self, request, spider):
+        browser = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=self.options)
+
         url = request.url
 
         try:
-            self.browser.get(url)
+            browser.get(url)
 
-            WebDriverWait(self.browser, 20).until(
+            WebDriverWait(browser, 20).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, "body"))  # 修改为页面上需要的关键元素
             )
 
-            html = self.browser.page_source
+            html = browser.page_source
             return HtmlResponse(url=request.url,
                                 body=html,
                                 request=request,
@@ -158,7 +162,7 @@ class SeleniumMiddleware(object):
             return HtmlResponse(status=403)
 
         finally:
-            self.browser.quit()
+            browser.quit()
 
 
 class SeleniumImageDownloaderMiddleware:

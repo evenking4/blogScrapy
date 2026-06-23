@@ -127,7 +127,7 @@ class SeleniumMiddleware(object):
 
         # 配置 ChromeOptions
         self.options = Options()
-        self.options.add_argument('--headless=new')
+        # self.options.add_argument('--headless=new')
         self.options.add_argument('--no-sandbox')
         self.options.add_argument('--ignore-certificate-errors')
         self.options.add_experimental_option('excludeSwitches', ['enable-automation'])
@@ -137,7 +137,7 @@ class SeleniumMiddleware(object):
         self.options.add_argument('--disable-gpu')  # 禁用 GPU，加速无头模式渲染
         self.options.add_argument('--disable-dev-shm-usage')  # 防止内存不足错误
         self.options.add_argument('--window-size=1920x1080')  # 指定窗口大小以避免页面渲染异常
-        
+        self.browser = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=self.options)
 
 
     def process_request(self, request, spider):

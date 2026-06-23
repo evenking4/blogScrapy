@@ -10,7 +10,7 @@
 
 # scrapy crawl html_crawl -a target=darknet         # OK
 
-# scrapy crawl html_crawl -a target=fireeye         # Fail
+# scrapy crawl html_crawl -a target=fireeye         # OK
 
 # scrapy crawl html_crawl -a target=forcepoint      # OK
 
@@ -26,21 +26,17 @@
 
 # scrapy crawl html_crawl -a target=rsa         # OK
 
-# scrapy crawl html_crawl -a target=securelist
+scrapy crawl html_crawl -a target=securelist
 
-# scrapy crawl html_crawl -a target=spiderlabs
+# scrapy crawl html_crawl -a target=spiderlabs  # OK
 
 # scrapy crawl html_crawl -a target=symantecthreatintelligence      # OK
 
-# scrapy crawl html_crawl -a target=thehackernews
+# scrapy crawl html_crawl -a target=thehackernews   # OK
 
-scrapy crawl html_crawl -a target=threatpost
+# scrapy crawl html_crawl -a target=threatpost  # OK
 
 # scrapy crawl html_crawl -a target=trendmicro
-
-# scrapy crawl html_crawl -a target=trendmicrosecurityintelligence
-
-# scrapy crawl html_crawl -a target=trustwave
 
 # scrapy crawl html_crawl -a target=unit42_paloalto
 
@@ -52,9 +48,9 @@ scrapy crawl html_crawl -a target=threatpost
 
 # scrapy crawl html_crawl -a target=kaspersky_vulnerability
 
-scrapy crawl html_crawl -a target=trendmicro_malware
+# scrapy crawl html_crawl -a target=trendmicro_malware  # OK
 
-scrapy crawl html_crawl -a target=trendmicro_spam
+# scrapy crawl html_crawl -a target=trendmicro_spam     # OK
 
-# scrapy crawl html_crawl -a target=fsecure
+# scrapy crawl html_crawl -a target=fsecure     #OK
 

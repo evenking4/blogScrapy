@@ -11,18 +11,14 @@ from twisted.internet.defer import Deferred
 from typing import TYPE_CHECKING, Any, cast
 
 # Comment 增加了链接去重功能
+# https://www.zscaler.com/blogs?current=n_3_n&size=n_8_n&filters%5B0%5D%5Bfield%5D=blog_category.keyword&filters%5B0%5D%5Bvalues%5D%5B0%5D=Security%20Research&filters%5B0%5D%5Btype%5D=any&sort%5B0%5D%5Bfield%5D=created&sort%5B0%5D%5Bdirection%5D=desc
 
-# TODO 需提前设置page_num
-page_num = 224
 
-class SecurelistSpider(scrapy.Spider):
-    website_name = "securelist"
-    name = "securelist_link"
-    allowed_domains = ["www.securelist.com"]
-    start_urls = []
-
-    # 用于和页数拼接
-    page_base_url = "https://securelist.com/all/page/"
+class ZsclaerSpider(scrapy.Spider):
+    website_name = "zsclaer"
+    name = "zscaler_link"
+    allowed_domains = ["www.zsclaer.com"]
+    start_urls = ["https://www.zscaler.com/blogs?size=n_8_n&filters%5B0%5D%5Bfield%5D=blog_category.keyword&filters%5B0%5D%5Bvalues%5D%5B0%5D=Security%20Research&filters%5B0%5D%5Btype%5D=any&sort%5B0%5D%5Bfield%5D=created&sort%5B0%5D%5Bdirection%5D=desc"]
 
     # 请求头Headers
     headers = {
@@ -37,10 +33,10 @@ class SecurelistSpider(scrapy.Spider):
     link_bar = None
 
     # 自制日志记录器
-    myLog = logging.getLogger("Securelist")
+    myLog = logging.getLogger("Rsa")
 
     def __init__(self, *args, **kwargs):
-        super(SecurelistSpider, self).__init__(*args, **kwargs)
+        super(ZsclaerSpider, self).__init__(*args, **kwargs)
 
         # 设置日志输出
         os.makedirs(f'log/{self.name}', exist_ok=True)
@@ -56,14 +52,72 @@ class SecurelistSpider(scrapy.Spider):
         self.myLog.debug("###################Start###################")
 
     def start_requests(self):
+        for url in self.start_urls:
+            yield Request(url=url,
+                          headers=self.headers,
+                          dont_filter=True,
+                          callback=self.get_page_num,
+                          errback=self.err_parse)
+
+    # 从首页获取站点的全局信息，如有多少页数。
+    def get_page_num(self, response):
+
+        # 用于存储链接
+        links = []
+
+        page_num = response.xpath('//a[@aria-label="Jump to page"]')
+
+        filename = "temp/zscaler.html"
+        with open(filename, 'wb') as f:
+            f.write(response.body)
+
+        print(page_num)
+
+        # page_num = int(response.xpath('(//a[@aria-label="Jump to page"])[last()]/text()').get())
+
+        # page_num xpath路径
+        # page_num = int(response.xpath('(//a[@aria-label="Jump to page"])[last()]/text()').get())
+        # print(page_num)
+        return
+
+        # 小批量调试
+        # page_num = 5
+
+        # 设置进度条
         self.link_bar = tqdm(total=page_num, desc='fumo勤劳工作中 ᗜˬᗜ...', unit="page")
-        for i in range(1, page_num + 1):
-            yield Request(url=self.page_base_url + str(i),
+
+        if page_num:
+
+            # 更新进度条
+            self.link_bar.update(1)
+
+            self.myLog.info(f"获取{self.website_name}主页成功，共有{page_num}页目录页")
+        else:
+            self.myLog.error(f"从主页获取页数失败")
+            return
+
+        links.extend(response.xpath(
+            '//article/a/@href').getall())
+
+        links = list(set(links))
+
+        self.myLog.info(f"首页共获取到{len(links)}个文章链接")
+        self.link_num += len(links)
+
+        for link in links:
+            linkItem = LinkItem()
+            linkItem['uuid'] = uuid4().hex
+            linkItem['url'] = link
+            yield linkItem
+
+        # 从其他导航页获取文章链接
+        for i in range(2, page_num + 1):
+            url = self.page_base_url + str(i)
+            yield Request(url=url,
                           headers=self.headers,
                           dont_filter=True,
                           callback=self.get_article_links,
                           errback=self.err_parse)
-            
 
     def get_article_links(self, response):
         # 用于存储链接
@@ -71,7 +125,7 @@ class SecurelistSpider(scrapy.Spider):
 
         # 文章链接的xpath的路径
         links.extend(response.xpath(
-            '//a[@class="c-card__link"]/@href').getall())
+            '//article/a/@href').getall())
 
 
         links = list(set(links))

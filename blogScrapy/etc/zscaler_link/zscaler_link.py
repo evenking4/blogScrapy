@@ -16,7 +16,7 @@ max_page = 114
 def scrape_blog_links(start_url, next_button_xpath, article_link_xpath):
     # Initialize Selenium WebDriver
     options = webdriver.ChromeOptions()
-    # options.add_argument('--headless')  # Run in headless mode
+    options.add_argument('--headless=new')  # Run in headless mode
     options.add_argument('--disable-gpu')
     options.add_argument('--no-sandbox')
     options.add_argument('--disable-dev-shm-usage')

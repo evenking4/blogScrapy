@@ -12,6 +12,8 @@
 /blogScrapy/old_links/
 /.idea
 /.claude
+/.vscode
+*.zip
 
 __pycache__/
 

@@ -20,13 +20,16 @@
 
 # scrapy crawl html_crawl -a target=malwarebytes    # OK
 
-# scrapy crawl html_crawl -a target=mcafee
+# scrapy crawl html_crawl -a target=mcafee          # OK
 
 # scrapy crawl html_crawl -a target=nccgroup
 
 # scrapy crawl html_crawl -a target=rsa         # OK
 
-scrapy crawl html_crawl -a target=securelist
+# scrapy crawl html_crawl -a target=securelist  # OK
+
+#scrapy crawl html_crawl -a target=sophos -a wait_target='//div[@class="min-h-screen"]'
+scrapy crawl html_crawl -a target=sophos -a wait_target="//div[@class='min-h-screen']"
 
 # scrapy crawl html_crawl -a target=spiderlabs  # OK
 

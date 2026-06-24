@@ -158,6 +158,8 @@ class SeleniumMiddleware(object):
         wait_target = request.meta.get("selenium_wait_target", "body")
         wait_time = request.meta.get("selenium_wait_time", 30)
 
+        print("wait_target:", wait_target)
+
         try:
             # 4. 【核心改动】每个请求不新开浏览器，而是利用 JS 在当前浏览器里新开一个独立的标签页（Tab）
             self.browser.execute_script(f'window.open("{url}");')

@@ -1,5 +1,6 @@
 import scrapy
 from scrapy.http import Request, Response
+from selenium.webdriver.common.by import By
 from tqdm import tqdm
 from ..items import *
 from scrapy import signals
@@ -27,12 +28,13 @@ class HtmlCrawlSpider(scrapy.Spider):
     # fumo~fumo~
     fumo_bar = None
 
-    def __init__(self, target=None, *args, **kwargs):
+    def __init__(self, target=None, wait_target=None, *args, **kwargs):
         super(HtmlCrawlSpider, self).__init__(*args, **kwargs)
         self.target = target
 
-        # 单target版本地兼容性措施，后续可能会改成多target
         self.website_name = target
+
+        self.wait_target = wait_target
 
         # 设置日志输出
         os.makedirs(f'log/{self.name}', exist_ok=True)
@@ -76,11 +78,17 @@ class HtmlCrawlSpider(scrapy.Spider):
 
         if retry_cnt <= max_retry:
             self.myLog.info(f"第{retry_cnt}次重试请求Url:{url}")
+
+            meta = {"uuid": uuid, "retry_cnt": retry_cnt + 1}
+            if self.wait_target:
+                meta["selenium_wait_target"] = self.wait_target
+                meta["selenium_wait_by"] = By.XPATH
+
             return Request(url=url,
                            headers=self.headers,
                            dont_filter=True,
                            callback=self.handle_html,
-                           meta={"uuid": uuid, "retry_cnt": retry_cnt + 1},
+                           meta=meta,
                            errback=self.err_parse)
         else:
             self.myLog.error(f"请求Url:{url}时出错次数超过最大重试次数！Retry num exceeded max!")
@@ -105,11 +113,18 @@ class HtmlCrawlSpider(scrapy.Spider):
         self.fumo_bar = tqdm(total=len(uncompleted_links), desc='勤劳的Fumo正在工作 ᗜᴗᗜ ...', unit="page")
 
         for uuid, link in uncompleted_links.items():
+            meta = {
+                "uuid": uuid
+            }
+            if self.wait_target:
+                meta["selenium_wait_target"] = self.wait_target
+                meta["selenium_wait_by"] = By.XPATH
+
             yield Request(url=link,
                           headers=self.headers,
                           dont_filter=True,
                           callback=self.handle_html,
-                          meta={"uuid": uuid},
+                          meta=meta,
                           errback=self.err_parse)
 
     def handle_html(self, response, **kwargs):

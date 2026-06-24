@@ -51,60 +51,74 @@ class Mcafeespider(scrapy.Spider):
         # 日志起点
         self.myLog.debug("###################Start###################")
 
-    def _fetch(self, url, retry=3):
-        """使用 curl 命令发起请求以绕过 Akamai TLS 指纹检测"""
-        for attempt in range(retry):
-            try:
-                result = subprocess.run([
-                    'curl', '-sL', '--compressed', '--max-time', '30',
-                    '-H', f'User-Agent: {self.headers["User-Agent"]}',
-                    '-H', f'Accept: {self.headers["Accept"]}',
-                    '-H', f'Accept-Language: {self.headers["Accept-Language"]}',
-                    url
-                ], capture_output=True, text=True, timeout=35)
-                if result.returncode == 0 and result.stdout:
-                    # 请求间较长延迟，避免触发 Akamai 速率限制
-                    time.sleep(8)
-                    return HtmlResponse(url=url, status=200,
-                                       body=result.stdout.encode('utf-8'), encoding='utf-8')
-                else:
-                    self.myLog.warning(f"curl 返回码 {result.returncode}，第{attempt+1}次重试")
-                    time.sleep(10)
-            except Exception as e:
-                self.myLog.warning(f"curl 调用异常: {e}，第{attempt+1}次重试")
-                time.sleep(10)
-        self.myLog.error(f"请求 {url} 在 {retry} 次重试后仍失败")
-        return HtmlResponse(url=url, status=500, body=b'')
+    # def _fetch(self, url, retry=3):
+    #     """使用 curl 命令发起请求以绕过 Akamai TLS 指纹检测"""
+    #     for attempt in range(retry):
+    #         try:
+    #             result = subprocess.run([
+    #                 'curl', '-sL', '--compressed', '--max-time', '30',
+    #                 '-H', f'User-Agent: {self.headers["User-Agent"]}',
+    #                 '-H', f'Accept: {self.headers["Accept"]}',
+    #                 '-H', f'Accept-Language: {self.headers["Accept-Language"]}',
+    #                 url
+    #             ], capture_output=True, text=True, timeout=35)
+    #             if result.returncode == 0 and result.stdout:
+    #                 # 请求间较长延迟，避免触发 Akamai 速率限制
+    #                 time.sleep(8)
+    #                 return HtmlResponse(url=url, status=200,
+    #                                    body=result.stdout.encode('utf-8'), encoding='utf-8')
+    #             else:
+    #                 self.myLog.warning(f"curl 返回码 {result.returncode}，第{attempt+1}次重试")
+    #                 time.sleep(10)
+    #         except Exception as e:
+    #             self.myLog.warning(f"curl 调用异常: {e}，第{attempt+1}次重试")
+    #             time.sleep(10)
+    #     self.myLog.error(f"请求 {url} 在 {retry} 次重试后仍失败")
+    #     return HtmlResponse(url=url, status=500, body=b'')
 
     def start_requests(self):
         for url in self.start_urls:
-            response = self._fetch(url)
-            if response.status != 200:
-                self.myLog.error(f"请求 {url} 失败，状态码: {response.status}")
-                continue
+            yield Request(url=url,
+                          headers=self.headers,
+                          dont_filter=True,
+                          callback=self.get_page_num,
+                          cb_kwargs={
+                              "page_url": url,
+                          },
+                          errback=self.err_parse)
 
-            self.myLog.info(f"成功获取分类首页: {url}")
+        # 从首页获取站点的全局信息，如有多少页数。
+    def get_page_num(self, response, page_url):
+        # 用于存储链接
+        links = []
 
-            # 处理第一页，获取文章链接和总页数
-            yield from self._process_first_page(response)
+        # page_num xpath路径
+        page_num = int(response.xpath('(//li/a[@class="page-numbers"])[last()]/text()').get())
 
-    def _process_first_page(self, response):
-        """处理分类首页：提取总页数和第一页文章链接，然后爬取剩余页面"""
-        url = response.url
+        print("page_num:", page_num)
 
-        # 获取总页数
-        page_nums = response.xpath(
-            '//a[contains(@class, "page-numbers") and not(contains(@class, "next")) '
-            'and not(contains(@class, "prev")) and not(contains(@class, "dots"))]/text()'
-        ).getall()
-        page_ints = [int(p) for p in page_nums if p.isdigit()]
-        page_num = max(page_ints) if page_ints else 1
+        # 小批量调试
+        # page_num = 5
 
-        self.myLog.info(f"分类 {url} 共 {page_num} 页")
+        # 设置进度条
+        self.link_bar = tqdm(total=page_num, desc='fumo勤劳工作中 ᗜˬᗜ...', unit="page")
 
-        # 提取第一页文章链接
-        links = self._extract_links(response)
-        self.myLog.info(f"第1页共获取到{len(links)}个文章链接")
+        if page_num:
+
+            # 更新进度条
+            self.link_bar.update(1)
+
+            self.myLog.info(f"获取{self.website_name}主页成功，共有{page_num}页目录页")
+        else:
+            self.myLog.error(f"从主页获取页数失败")
+            return
+
+        links.extend(response.xpath(
+            '//div[@class="card"]//div[@class="card-image-topic"]/a/@href').getall())
+
+        links = list(set(links))
+
+        self.myLog.info(f"首页共获取到{len(links)}个文章链接")
         self.link_num += len(links)
 
         for link in links:
@@ -113,30 +127,69 @@ class Mcafeespider(scrapy.Spider):
             linkItem['url'] = link
             yield linkItem
 
-        # 请求剩余页面
-        page_base_url = url.rstrip('/') + "/page/"
+        # 从其他导航页获取文章链接
         for i in range(2, page_num + 1):
-            page_url = page_base_url + str(i) + "/"
-            page_response = self._fetch(page_url)
-            if page_response.status != 200:
-                self.myLog.error(f"请求 {page_url} 失败，跳过")
-                continue
+            url = page_url + 'page/' + str(i)
+            yield Request(url=url,
+                          headers=self.headers,
+                          dont_filter=True,
+                          callback=self.get_article_links,
+                          errback=self.err_parse)
 
-            links = self._extract_links(page_response)
-            self.myLog.info(f"第{i}页共获取到{len(links)}个文章链接")
-            self.link_num += len(links)
+    def get_article_links(self, response):
+        # 用于存储链接
+        links = []
 
-            for link in links:
-                linkItem = LinkItem()
-                linkItem['uuid'] = uuid4().hex
-                linkItem['url'] = link
-                yield linkItem
+        # 文章链接的xpath的路径
+        links.extend(response.xpath(
+            '//div[@class="card"]//div[@class="card-image-topic"]/a/@href').getall())
 
-    def _extract_links(self, response):
-        """从页面提取文章链接并去重"""
-        links = response.xpath(
-            '//*[contains(@class, "card-title")]/a/@href').getall()
-        return list(set(links))
+        links = list(set(links))
+
+        self.link_bar.update(1)
+
+        self.myLog.info(f"url:{response.request.url}共获取到{len(links)}个文章链接")
+        self.link_num += len(links)
+
+        for link in links:
+            linkItem = LinkItem()
+            linkItem['uuid'] = uuid4().hex
+            linkItem['url'] = link
+            yield linkItem
+
+    def err_parse(self, failure):
+        response = failure.value.response
+        request = failure.request
+        print(response.text)
+        if response:
+            self.myLog.error(f"在请求URL:{request.url}时出现错误。状态码为{response.status}")
+        else:
+            self.myLog.error(f"在请求URL:{request.url}，且没有response")
+
+        # 移交给错误处理函数
+        return self.handle_error(response, request)
+
+    # 处理未爬取成功的请求。重爬，写入日志
+    def handle_error(self, response, request):
+
+        # 最大重试次数
+        max_retry = 5
+
+        url = request.url
+
+        retry_cnt = request.meta.get('retry_cnt', 0)
+
+        if retry_cnt <= max_retry:
+            self.myLog.info(f"第{retry_cnt}次重试请求Url:{url}")
+            return Request(url=url,
+                           headers=self.headers,
+                           dont_filter=True,
+                           callback=request.callback,
+                           meta={"retry_cnt": retry_cnt + 1},
+                           errback=self.err_parse)
+        else:
+            self.myLog.error(f"请求Url:{url}时出错次数超过最大重试次数！")
+            return None
 
     def closed(self, reason):
         self.myLog.info(f"Spider:{self.name}爬取完成，共获取到链接{self.link_num}个")

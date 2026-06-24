@@ -1,5 +1,6 @@
 import scrapy
 from scrapy.http import Request, Response
+from selenium.webdriver.common.by import By
 from tqdm import tqdm
 from ..items import *
 from scrapy import signals
@@ -12,6 +13,9 @@ from typing import TYPE_CHECKING, Any, cast
 
 # Comment 增加了链接去重功能
 
+# TODO 提前设置页数
+page_num = 263
+
 class Sophosspider(scrapy.Spider):
     website_name = "sophos"
     name = "sophos_link"
@@ -20,6 +24,8 @@ class Sophosspider(scrapy.Spider):
 
     # 用于和页数拼接
     page_base_url = "https://www.sophos.com/en-us/blog?page="
+
+    article_base_url = "https://www.sophos.com"
 
     # 请求头Headers
     headers = {
@@ -53,65 +59,72 @@ class Sophosspider(scrapy.Spider):
         self.myLog.debug("###################Start###################")
 
     def start_requests(self):
-        for url in self.start_urls:
-            print("url:", url)
-            yield Request(url=url,
-                          headers=self.headers,
-                          dont_filter=True,
-                          callback=self.get_page_num,
-                          errback=self.err_parse)
-
-    # 从首页获取站点的全局信息，如有多少页数。
-    def get_page_num(self, response):
-
-        print("get_page_num")
-
-        # 用于存储链接
-        links = []
-
-        # page_num xpath路径
-        page_num = int(response.xpath('//button[@aria-current="page"]/span/text()').get())
-
-        print(page_num)
-        return
-        # 小批量调试
-        # page_num = 5
-
-        # 设置进度条
         self.link_bar = tqdm(total=page_num, desc='fumo勤劳工作中 ᗜˬᗜ...', unit="page")
-
-        if page_num:
-
-            # 更新进度条
-            self.link_bar.update(1)
-
-            self.myLog.info(f"获取{self.website_name}主页成功，共有{page_num}页目录页")
-        else:
-            self.myLog.error(f"从主页获取页数失败")
-            return
-
-        links.extend(response.xpath(
-            '//article/a/@href').getall())
-
-        links = list(set(links))
-
-        self.myLog.info(f"首页共获取到{len(links)}个文章链接")
-        self.link_num += len(links)
-
-        for link in links:
-            linkItem = LinkItem()
-            linkItem['uuid'] = uuid4().hex
-            linkItem['url'] = link
-            yield linkItem
-
-        # 从其他导航页获取文章链接
-        for i in range(2, page_num + 1):
-            url = self.page_base_url + str(i)
-            yield Request(url=url,
+        for i in range(1, page_num + 1):
+            yield Request(url=self.page_base_url + str(i),
                           headers=self.headers,
                           dont_filter=True,
                           callback=self.get_article_links,
-                          errback=self.err_parse)
+                          errback=self.err_parse,
+                          meta={
+                              'selenium_wait_by': By.XPATH,
+                              'selenium_wait_target': '//div[@class="container"]//div[@class="flex h-full flex-col"]/a[1]',
+                              'selenium_wait_time': 40
+                          })
+
+    # 从首页获取站点的全局信息，如有多少页数。
+    # def get_page_num(self, response):
+    #
+    #     # 用于存储链接
+    #     links = []
+    #     # print(response.text)
+    #     # page_num xpath路径
+    #     with open("temp/sophos.html", "w", encoding="utf-8") as f:
+    #         f.write(response.text)
+    #     page_num = response.xpath('//button[@aria-current="page"]')
+    #     # page_num = int(response.xpath('(//button[@aria-current="page"]/span)[last()]/text()').get())
+    #
+    #     print("page_num:", page_num)
+    #
+    #     return
+    #     # 小批量调试
+    #     # page_num = 5
+    #
+    #     # 设置进度条
+    #     self.link_bar = tqdm(total=page_num, desc='fumo勤劳工作中 ᗜˬᗜ...', unit="page")
+    #
+    #     if page_num:
+    #
+    #         # 更新进度条
+    #         self.link_bar.update(1)
+    #
+    #         self.myLog.info(f"获取{self.website_name}主页成功，共有{page_num}页目录页")
+    #     else:
+    #         self.myLog.error(f"从主页获取页数失败")
+    #         return
+    #
+    #     links.extend(response.xpath(
+    #         '//div[@class="flex h-full flex-col"]/a/@href').getall())
+    #
+    #     links = list(set(links))
+    #
+    #     self.myLog.info(f"首页共获取到{len(links)}个文章链接")
+    #     self.link_num += len(links)
+    #
+    #     for link in links:
+    #         linkItem = LinkItem()
+    #         linkItem['uuid'] = uuid4().hex
+    #         linkItem['url'] = link
+    #         yield linkItem
+    #
+    #     # 从其他导航页获取文章链接
+    #     for i in range(2, page_num + 1):
+    #         url = self.page_base_url + str(i)
+    #         yield Request(url=url,
+    #                       headers=self.headers,
+    #                       dont_filter=True,
+    #                       callback=self.get_article_links,
+    #                       errback=self.err_parse)
 
     def get_article_links(self, response):
         # 用于存储链接
@@ -119,8 +132,7 @@ class Sophosspider(scrapy.Spider):
 
         # 文章链接的xpath的路径
         links.extend(response.xpath(
-            '//article/a/@href').getall())
-
+            '//div[@class="container"]//div[@class="flex h-full flex-col"]/a/@href').getall())
 
         links = list(set(links))
 
@@ -132,7 +144,7 @@ class Sophosspider(scrapy.Spider):
         for link in links:
             linkItem = LinkItem()
             linkItem['uuid'] = uuid4().hex
-            linkItem['url'] = link
+            linkItem['url'] = self.article_base_url + link
             yield linkItem
 
     def err_parse(self, failure):

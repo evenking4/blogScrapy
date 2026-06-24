@@ -66,9 +66,17 @@ LOG_LEVEL = "ERROR"
 # See https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
 DOWNLOADER_MIDDLEWARES = {
    # "blogScrapy.middlewares.SeleniumImageDownloaderMiddleware": 400,
-   # "blogScrapy.middlewares.SeleniumMiddleware": 500,
+   "blogScrapy.middlewares.SeleniumMiddleware": 500,
    # "blogScrapy.middlewares.PauseMiddleware": 600,
 }
+
+# DOWNLOAD_HANDLERS = {
+#     "http": "scrapy_playwright.handler.ScrapyPlaywrightDownloadHandler",
+#     "https": "scrapy_playwright.handler.ScrapyPlaywrightDownloadHandler",
+# }
+#
+# # 必须使用 Asyncio 孪生事件循环
+# TWISTED_REACTOR = "twisted.internet.asyncioreactor.AsyncioSelectorReactor"
 
 # Enable or disable extensions
 # See https://docs.scrapy.org/en/latest/topics/extensions.html

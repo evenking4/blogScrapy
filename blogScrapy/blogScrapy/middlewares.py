@@ -120,49 +120,135 @@ class BlogscrapyDownloaderMiddleware:
     def spider_opened(self, spider):
         spider.logger.info("Spider opened: %s" % spider.name)
 
+
 class SeleniumMiddleware(object):
 
     def __init__(self):
-        MiddleWareLog.info("启用Selenium下载器")
+        MiddleWareLog.info("启用全局持久化 Selenium 下载器")
 
-        # 配置 ChromeOptions
+        # 1. 配置 ChromeOptions
         self.options = Options()
-        # self.options.add_argument('--headless=new')
+        # self.options.add_argument('--headless=new')  # 建议开启无头
         self.options.add_argument('--no-sandbox')
         self.options.add_argument('--ignore-certificate-errors')
-        self.options.add_experimental_option('excludeSwitches', ['enable-automation'])
-        self.options.add_experimental_option('excludeSwitches', ['enable-logging'])
+        self.options.add_experimental_option('excludeSwitches', ['enable-automation', 'enable-logging'])
         self.options.add_argument('--allow-insecure-localhost')
         self.options.add_argument('--disable-web-security')
-        self.options.add_argument('--disable-gpu')  # 禁用 GPU，加速无头模式渲染
-        self.options.add_argument('--disable-dev-shm-usage')  # 防止内存不足错误
-        self.options.add_argument('--window-size=1920x1080')  # 指定窗口大小以避免页面渲染异常
-        self.browser = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=self.options)
+        self.options.add_argument('--disable-gpu')
+        self.options.add_argument('--disable-dev-shm-usage')
+        self.options.add_argument('--window-size=1920x1080')
 
+        # 2. 【核心改动】在初始化时，整个爬虫生命周期只拉起“这一个”浏览器进程
+        self.browser = webdriver.Chrome(
+            service=Service(ChromeDriverManager().install()),
+            options=self.options
+        )
+
+    @classmethod
+    def from_crawler(cls, crawler):
+        # 3. 注册 Scrapy 信号：当爬虫关闭时，自动释放并关闭浏览器进程
+        middleware = cls()
+        crawler.signals.connect(middleware.spider_closed, signal=signals.spider_closed)
+        return middleware
 
     def process_request(self, request, spider):
-        browser = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=self.options)
-
         url = request.url
 
-        try:
-            browser.get(url)
+        wait_by = request.meta.get("selenium_wait_by", By.CSS_SELECTOR)
+        wait_target = request.meta.get("selenium_wait_target", "body")
+        wait_time = request.meta.get("selenium_wait_time", 30)
 
-            WebDriverWait(browser, 20).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, "body"))  # 修改为页面上需要的关键元素
+        try:
+            # 4. 【核心改动】每个请求不新开浏览器，而是利用 JS 在当前浏览器里新开一个独立的标签页（Tab）
+            self.browser.execute_script(f'window.open("{url}");')
+
+            # 5. 将控制权切换到最新打开的这个标签页
+            self.browser.switch_to.window(self.browser.window_handles[-1])
+            current_handle = self.browser.current_window_handle
+
+            # 6. 等待目标元素加载
+            # WebDriverWait(self.browser, 30).until(
+            #     EC.presence_of_element_located((By.CSS_SELECTOR, "body"))
+            # )
+            WebDriverWait(self.browser, wait_time).until(
+                EC.presence_of_element_located((wait_by, wait_target))
             )
 
-            html = browser.page_source
-            return HtmlResponse(url=request.url,
+            html = self.browser.page_source
+
+            # 7. 拿到数据后，立刻关闭当前标签页，防止标签页堆积导致内存爆炸
+            self.browser.close()
+
+            # 8. 如果浏览器还有剩余标签，把控制权交还给第一个页签（防止 Selenium 迷失焦点）
+            if self.browser.window_handles:
+                self.browser.switch_to.window(self.browser.window_handles[0])
+
+            return HtmlResponse(url=url,
                                 body=html,
                                 request=request,
                                 encoding='utf-8',
                                 status=200)
-        except Exception as e:
-            return HtmlResponse(status=403)
 
-        finally:
-            browser.quit()
+        except Exception as e:
+            # 异常时也要确保关闭刚才打开的标签页
+            try:
+                if len(self.browser.window_handles) > 1:
+                    self.browser.close()
+                    self.browser.switch_to.window(self.browser.window_handles[0])
+            except Exception:
+                pass
+            return HtmlResponse(url=url, status=403, request=request)
+
+    def spider_closed(self, spider):
+        # 9. 当爬虫功德圆满结束时，彻底退出并杀死 chrome 进程
+        MiddleWareLog.info("爬虫结束，正在关闭 Selenium 全局浏览器...")
+        if self.browser:
+            self.browser.quit()
+
+# class SeleniumMiddleware(object):
+#
+#     def __init__(self):
+#         MiddleWareLog.info("启用Selenium下载器")
+#
+#         # 配置 ChromeOptions
+#         self.options = Options()
+#         # self.options.add_argument('--headless=new')
+#         self.options.add_argument('--no-sandbox')
+#         self.options.add_argument('--ignore-certificate-errors')
+#         self.options.add_experimental_option('excludeSwitches', ['enable-automation'])
+#         self.options.add_experimental_option('excludeSwitches', ['enable-logging'])
+#         self.options.add_argument('--allow-insecure-localhost')
+#         self.options.add_argument('--disable-web-security')
+#         self.options.add_argument('--disable-gpu')  # 禁用 GPU，加速无头模式渲染
+#         self.options.add_argument('--disable-dev-shm-usage')  # 防止内存不足错误
+#         self.options.add_argument('--window-size=1920x1080')  # 指定窗口大小以避免页面渲染异常
+#         self.browser = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=self.options)
+#
+#
+#
+#     def process_request(self, request, spider):
+#         # browser = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=self.options)
+#
+#         url = request.url
+#
+#         try:
+#             self.browser.get(url)
+#
+#             WebDriverWait(self.browser, 20).until(
+#                 EC.presence_of_element_located((By.CSS_SELECTOR, "body"))  # 修改为页面上需要的关键元素
+#             )
+#
+#             html = browser.page_source
+#             return HtmlResponse(url=request.url,
+#                                 body=html,
+#                                 request=request,
+#                                 encoding='utf-8',
+#                                 status=200)
+#         except Exception as e:
+#             return HtmlResponse(status=403)
+#
+#         finally:
+#             self.browser.close()
 
 
 class SeleniumImageDownloaderMiddleware:

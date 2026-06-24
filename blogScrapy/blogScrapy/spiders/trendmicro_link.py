@@ -23,6 +23,8 @@ class TrendmicroSpider(scrapy.Spider):
         'Accept': 'application/json'
     }
 
+    base_url = 'https://www.trendmicro.com/en_us/research.tagSearch.json'
+
     # 用于记录获取多少链接
     link_num = 0
 
@@ -67,9 +69,11 @@ class TrendmicroSpider(scrapy.Spider):
             'trend-micro-research:threats/privacy-and-risks',
             'trend-micro-research:threats/ransomware',
             'trend-micro-research:threats/spam',
+            'trend-micro-research:threats/risk-management',
         ]
 
         environments_category = [
+            'trend-micro-research:environments/asrm',
             'trend-micro-research:environments/cloud',
             'trend-micro-research:environments/connected-car',
             'trend-micro-research:environments/data-center',
@@ -80,19 +84,8 @@ class TrendmicroSpider(scrapy.Spider):
             'trend-micro-research:environments/network',
             'trend-micro-research:environments/smart-home',
             'trend-micro-research:environments/social-media',
+            'trend-micro-research:environments/tm-vision-one-platform',
             'trend-micro-research:environments/web',
-        ]
-
-        article_type_category = [
-            'trend-micro-research:article-type/letstalk-series',
-            'trend-micro-research:article-type/annual-predictions',
-            'trend-micro-research:article-type/expert-perspective',
-            'trend-micro-research:article-type/foresight-predictive',
-            'trend-micro-research:article-type/technical',
-            'trend-micro-research:article-type/latest-news',
-            'trend-micro-research:article-type/reports',
-            'trend-micro-research:article-type/research',
-            'trend-micro-research:article-type/security-strategies',
         ]
 
         medium_category = [
@@ -105,50 +98,68 @@ class TrendmicroSpider(scrapy.Spider):
             'trend-micro-research:medium/webinar'
         ]
 
-        url_pools = []
+        article_type_category = [
+            'trend-micro-research:article-type/letstalk-series',
+            'trend-micro-research:article-type/annual-predictions',
+            'trend-micro-research:article-type/consumer-focus',
+            'trend-micro-research:article-type/expert-perspective',
+            'trend-micro-research:article-type/foresight-predictive',
+            'trend-micro-research:article-type/technical',
+            'trend-micro-research:article-type/investigations',
+            'trend-micro-research:article-type/latest-news',
+            'trend-micro-research:article-type/reports',
+            'trend-micro-research:article-type/research',
+            'trend-micro-research:article-type/security-strategies',
+        ]
 
-        for i1 in threats_category:
-            for i2 in environments_category:
-                for i3 in article_type_category:
-                    for i4 in medium_category:
-                        url_pools.append(base_url + '?' + self.cat_params([i1, i2, i3, i4]))
+        yield Request(url=self.base_url,
+                        headers=self.headers,
+                        dont_filter=True,
+                        callback=self.get_article_links,
+                        cb_kwargs={'param_list': [], 'tags_list': [article_type_category, medium_category, threats_category, environments_category]},
+                        errback=self.err_parse)
 
-        for i in threats_category:
-            url_pools.append(base_url + '?' + self.cat_params([i]))
+        # url_pools = []
 
-        for i in environments_category:
-            url_pools.append(base_url + '?' + self.cat_params([i]))
+        # for i1 in threats_category:
+        #     for i2 in environments_category:
+        #         for i3 in article_type_category:
+        #             for i4 in medium_category:
+        #                 url_pools.append(base_url + '?' + self.cat_params([i1, i2, i3, i4]))
 
-        for i in article_type_category:
-            url_pools.append(base_url + '?' + self.cat_params([i]))
+        # for i in threats_category:
+        #     url_pools.append(base_url + '?' + self.cat_params([i]))
 
-        for i in medium_category:
-            url_pools.append(base_url + '?' + self.cat_params([i]))
+        # for i in environments_category:
+        #     url_pools.append(base_url + '?' + self.cat_params([i]))
 
-        # 设置进度条
-        self.link_bar = tqdm(total=len(url_pools), desc='fumo勤劳工作中 ᗜˬᗜ...', unit="page")
+        # for i in article_type_category:
+        #     url_pools.append(base_url + '?' + self.cat_params([i]))
 
-        for url in url_pools:
-            yield Request(url=url,
-                          headers=self.headers,
-                          dont_filter=True,
-                          callback=self.get_article_links,
-                          errback=self.err_parse)
+        # for i in medium_category:
+        #     url_pools.append(base_url + '?' + self.cat_params([i]))
+
+        # # 设置进度条
+        # self.link_bar = tqdm(total=len(url_pools), desc='fumo勤劳工作中 ᗜˬᗜ...', unit="page")
+
+        # for url in url_pools:
+        #     yield Request(url=url,
+        #                   headers=self.headers,
+        #                   dont_filter=True,
+        #                   callback=self.get_article_links,
+        #                   errback=self.err_parse)
 
 
-    def get_article_links(self, response):
+    def get_article_links(self, response, param_list=[], tags_list=[]):
         # 用于存储链接
         links = []
 
         data = response.json()
 
         links = [article['path'] for article in data['articles']]
-
+        links_num = len(links)
         links = list(set(links))
 
-        self.link_bar.update(1)
-
-        self.myLog.info(f"url:{response.request.url}共获取到{len(links)}个文章链接")
         self.link_num += len(links)
 
         for link in links:
@@ -156,6 +167,26 @@ class TrendmicroSpider(scrapy.Spider):
             linkItem['uuid'] = uuid4().hex
             linkItem['url'] = link
             yield linkItem
+
+        # 这个狗屎网站的API每次最多返回100条数据
+        # 这个标签返回的条数到100了，就需要用更细致的标签组合去获取连接
+        self.myLog.info(f"标签组合{param_list}共获取到{len(links)}个文章链接")
+        if links_num >= 100 and len(tags_list) > 0:
+            self.myLog.info(f"标签组合{param_list}进入更深一步组合")
+            new_tags_list = tags_list[1:]
+            tags_pool = tags_list[0]
+            for tag in tags_pool:
+                new_param_list = param_list + [tag]
+                new_url = self.base_url + '?' + self.cat_params(new_param_list)
+                yield Request(url=new_url,
+                              headers=self.headers,
+                              dont_filter=True,
+                              callback=self.get_article_links,
+                              cb_kwargs={'param_list': new_param_list, 'tags_list': new_tags_list},
+                              errback=self.err_parse)
+                
+            
+
 
     def err_parse(self, failure):
         response = failure.value.response

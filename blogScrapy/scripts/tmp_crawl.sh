@@ -31,6 +31,7 @@
 #scrapy crawl html_crawl -a target=sophos -a wait_target='//div[@class="min-h-screen"]'
 scrapy crawl html_crawl -a target=sophos -a wait_target="//div[@class='min-h-screen']"
 
+
 # scrapy crawl html_crawl -a target=spiderlabs  # OK
 
 # scrapy crawl html_crawl -a target=symantecthreatintelligence      # OK

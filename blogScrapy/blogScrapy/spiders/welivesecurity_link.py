@@ -71,7 +71,7 @@ class WelivesecuritySpider(scrapy.Spider):
 
         # page_num xpath路径
         page_num = int(response.xpath(
-            '//ul[@class="pagination"]/li[last()-1]/a/text()').get())
+            '(//a[@class="page-link"])[last()-1]/text()').get())
 
         # 小批量调试
         # page_num = 5

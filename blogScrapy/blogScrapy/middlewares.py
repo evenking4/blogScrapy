@@ -193,6 +193,7 @@ class SeleniumMiddleware(object):
 
         except Exception as e:
             # 异常时也要确保关闭刚才打开的标签页
+            MiddleWareLog.info(f"浏览器出现异常 {e}")
             try:
                 if len(self.browser.window_handles) > 1:
                     self.browser.close()
@@ -201,11 +202,89 @@ class SeleniumMiddleware(object):
                 pass
             return HtmlResponse(url=url, status=403, request=request)
 
+    # def process_request(self, request, spider):
+    #     url = request.url
+    #
+    #     # 检查是否是 JSON API 请求
+    #     is_json = request.meta.get("is_json", False)
+    #
+    #     wait_by = request.meta.get("selenium_wait_by", By.CSS_SELECTOR)
+    #     wait_target = request.meta.get("selenium_wait_target", "body")
+    #     wait_time = request.meta.get("selenium_wait_time", 30)
+    #
+    #     try:
+    #         # 1. 打开一个空白页或新标签
+    #         self.browser.execute_script('window.open("about:blank");')
+    #         self.browser.switch_to.window(self.browser.window_handles[-1])
+    #
+    #         if is_json:
+    #             # 2. 如果是 JSON API，先导向同源域名以携带 Cookie 和绕过跨域，然后用 JS 发送真实的 POST 请求
+    #             # 注意：这里先跳转到主站，确保过掉 Azure 的外部盾
+    #             if "nccgroup.com" not in self.browser.current_url:
+    #                 self.browser.get("https://www.nccgroup.com/")
+    #
+    #             # 获取 Scrapy request 携带的 body (Payload)
+    #             payload_str = request.body.decode('utf-8') if request.body else "{}"
+    #
+    #             # 构造前端 fetch 脚本，将结果直接写到 body 里
+    #             js_script = f"""
+    #             fetch("{url}", {{
+    #                 method: "{request.method}",
+    #                 headers: {{
+    #                     "Content-Type": "application/json"
+    #                 }},
+    #                 body: `{payload_str}`
+    #             }})
+    #             .then(response => response.text())
+    #             .then(text => {{ document.body.innerText = text; }})
+    #             .catch(err => {{ document.body.innerText = "ERROR: " + err; }});
+    #             """
+    #             self.browser.execute_script(js_script)
+    #
+    #             # 3. 【核心等待】等待 body 里的内容变成合法的 JSON 格式（以 {{ 开始，以 }} 结束）
+    #             WebDriverWait(self.browser, wait_time).until(
+    #                 lambda driver: driver.find_element(By.TAG_NAME, "body").text.strip().startswith("{")
+    #             )
+    #
+    #             # 直接获取纯文本 JSON
+    #             html = self.browser.find_element(By.TAG_NAME, "body").text.strip()
+    #         else:
+    #             # 4. 普通 HTML 页面请求逻辑保持不变
+    #             self.browser.get(url)
+    #             WebDriverWait(self.browser, wait_time).until(
+    #                 EC.presence_of_element_located((wait_by, wait_target))
+    #             )
+    #             html = self.browser.page_source
+    #
+    #         # 5. 拿到数据后，立刻关闭当前标签页
+    #         self.browser.close()
+    #
+    #         if self.browser.window_handles:
+    #             self.browser.switch_to.window(self.browser.window_handles[0])
+    #
+    #         # 返回响应
+    #         return HtmlResponse(url=url,
+    #                             body=html,
+    #                             request=request,
+    #                             encoding='utf-8',
+    #                             status=200)
+    #
+    #     except Exception as e:
+    #         MiddleWareLog.info(f"浏览器出现异常 {e}")
+    #         try:
+    #             if len(self.browser.window_handles) > 1:
+    #                 self.browser.close()
+    #                 self.browser.switch_to.window(self.browser.window_handles[0])
+    #         except Exception:
+    #             pass
+    #         return HtmlResponse(url=url, status=403, request=request)
+    #
     def spider_closed(self, spider):
         # 9. 当爬虫功德圆满结束时，彻底退出并杀死 chrome 进程
         MiddleWareLog.info("爬虫结束，正在关闭 Selenium 全局浏览器...")
         if self.browser:
             self.browser.quit()
+
 
 # class SeleniumMiddleware(object):
 #

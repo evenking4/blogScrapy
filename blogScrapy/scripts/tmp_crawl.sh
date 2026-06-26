@@ -22,6 +22,7 @@
 
 # scrapy crawl html_crawl -a target=mcafee          # OK
 
+# scrapy crawl html_crawl -a target=nccgroup -a wait_target="//div[@class='rte']"
 # scrapy crawl html_crawl -a target=nccgroup
 
 # scrapy crawl html_crawl -a target=rsa         # OK
@@ -29,7 +30,7 @@
 # scrapy crawl html_crawl -a target=securelist  # OK
 
 #scrapy crawl html_crawl -a target=sophos -a wait_target='//div[@class="min-h-screen"]'
-scrapy crawl html_crawl -a target=sophos -a wait_target="//div[@class='min-h-screen']"
+#scrapy crawl html_crawl -a target=sophos -a wait_target="//div[@class='min-h-screen']"
 
 # scrapy crawl html_crawl -a target=spiderlabs  # OK
 
@@ -39,13 +40,13 @@ scrapy crawl html_crawl -a target=sophos -a wait_target="//div[@class='min-h-scr
 
 # scrapy crawl html_crawl -a target=threatpost  # OK
 
-# scrapy crawl html_crawl -a target=trendmicro
+# scrapy crawl html_crawl -a target=trendmicro  # OK
 
-# scrapy crawl html_crawl -a target=unit42_paloalto
+# scrapy crawl html_crawl -a target=unit42    # OK
 
-# scrapy crawl html_crawl -a target=welivesecurity
+# scrapy crawl html_crawl -a target=welivesecurity  # OK
 
-# scrapy crawl html_crawl -a target=zscaler
+# scrapy crawl html_crawl -a target=zscaler # OK
 
 # scrapy crawl html_crawl -a target=kaspersky_threat
 

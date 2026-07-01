@@ -14,6 +14,7 @@
 /.claude
 /.vscode
 *.zip
+temp_*
 
 __pycache__/
 

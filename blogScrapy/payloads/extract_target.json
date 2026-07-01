@@ -1,0 +1,137 @@
+{
+  "levelblue": {
+    "title": "//div[@class=\"blog-details-header-left\"]/h1/text()",
+    "date": "//span[@class=\"date-time\"]/time/@datetime",
+    "main_content": "//div[@class=\"wrapper-blog-content\"]"
+  },
+  "ciscoumbrella": {
+    "title": "//h1[@class=\"entry-title\" or @class=\"area-title h1\"]/text()",
+    "date": "//time[@class=\"entry-time\"]/text() | //meta[@property=\"article:modified_time\"]/@content",
+    "main_content": "//div[@class=\"entry-content\"]"
+  },
+  "cloudflare": {
+    "title": "//article/h1/text()",
+    "date": "//p[@class=\"f3 fw5 gray5 db di-l mt2\"]/text()",
+    "main_content": "//section[@class=\"post-full-content\"]"
+  },
+  "crowdstrike": {
+    "title": "//h1/text()",
+    "date": "//div[@class=\"publish_info\"]/p/text()",
+    "main_content": "//div[@class=\"cmp-text\"]"
+  },
+  "csoonline": {
+    "title": "//h1/text()",
+    "date": "//div[@class='article-hero']//div[@class='card__info card__info--light']/span[1]/text()",
+    "main_content": "//section[@class='article']"
+  },
+  "darknet": {
+    "title": "//h1[@class=\"entry-title\"]/text()",
+    "date": "//time[@class=\"entry-time\"]/@datetime",
+    "main_content": "//div[@class='entry-content' and @itemprop='text']"
+  },
+  "fireeye": {
+    "title": "//div[contains(@class, 'col-md-9')]/h1/text()",
+    "date": "//meta[@name='releaseDate']/@content | //meta[@name='lastmodified']/@content",
+    "main_content": "//div[contains(@class, 'col-md-9')]"
+  },
+  "forcepoint": {
+    "title": "//div[@class='mb-md flex flex-col']/h1/text()",
+    "date": "//div[@class='mb-md flex flex-col']//time/@datetime",
+    "main_content": "//div[@class='col-span-8 col-start-1 max-md:order-3']"
+  },
+  "hotforsecurity": {
+    "title": "//div[@class='tw-mx-auto lg:tw-w-2/3 tw-break-words']/h1/text()",
+    "date": "//div[@class='tw-mt-3 tw-items-center tw-text-sm sm:tw-flex']//p/text()",
+    "main_content": "//div[@class='content tw-mb-12 tw-text-lg tw-text-black']"
+  },
+  "kasperskydaily": {
+    "title": "//h1[@class='c-article__title']/text()",
+    "date": "//ul[@class='c-article__meta-list']//time/@datetime",
+    "main_content": "//div[@class='c-article__content']"
+  },
+  "malwarebytes": {
+    "title": "//main[@id='primary']//h1/text()",
+    "date": "//span[@class='posted-on']/text()",
+    "main_content": "//article[contains(@class, 'post')]"
+  },
+  "mcafee": {
+    "title": "//h1[@class='main-heading']/text() | //div[@class='container article-content']//h1/text()",
+    "date": "//div[@class='article-date']//small[@class='text-muted']/text()",
+    "main_content": "//div[@class='the_content']"
+  },
+  "nccgroup": {
+    "title": "//h1[@class='c-banner__header']/text()",
+    "date": "//p[@class='c-banner__date']/text()",
+    "main_content": "//div[@class='body']"
+  },
+  "rsa": {
+    "title": "//main[@id='main']//h1/text()",
+    "date": "//main[@id='main']//time/@datetime",
+    "main_content": "//div[@class='chapter-items blog-post-body-chapter-items']"
+  },
+  "securelist": {
+    "title": "//h1[@class='c-article__title']/text()",
+    "date": "//article[@class='c-article']//div[contains(@class, 'c-article__info')]//time/@datetime",
+    "main_content": "//div[@class='c-wysiwyg']"
+  },
+  "sophos": {
+    "title": "//main[@id='main-content']//div[@class='rich-text-wrapper title-2 text-navy text-center']//text()",
+    "date": "//main[@id='main-content']//p[@class='mb-[17px] lg:mb-0 sub-menu-link text-gray lg:pr-xs']/text()",
+    "main_content": "//main[@id='main-content']//div[contains(@class, 'blog-inner-content')]//div[contains(@class, 'rich-text-wrapper')]"
+  },
+  "spiderlabs": {
+    "title": "//div[@class='blog-details-header']//h1/text()",
+    "date": "//span[@class='date-time']//time/@datetime",
+    "main_content": "//div[@class='wrapper-blog-content']"
+  },
+  "symantecthreatintelligence": {
+    "title": "//h1[@class='blog-post-page__title']/text()",
+    "date": "//ul[@class='metadata__list']/li[@class='metadata__item'][2]/text()",
+    "main_content": "//div[@class='blog-post-page__content']"
+  },
+  "thehackernews": {
+    "title": "//h1[@class='story-title']/a/text()",
+    "date": "//div[@class='postmeta']//span[@class='author'][last()]/text()",
+    "main_content": "//div[@class='post']"
+  },
+  "threatpost": {
+    "title": "//h1[@class='c-article__title']/text()",
+    "date": "//div[@class='c-article__time']/time/@datetime",
+    "main_content": "//div[@class='c-article__main']"
+  },
+  "trendmicro": {
+    "title": "//h1[@class='article-details__title']/text()",
+    "date": "//time[@class='article-details__date']/text()",
+    "main_content": "//main[contains(@class, 'main--content')]"
+  },
+  "unit42": {
+    "title": "//div[@class='ab__title']/h1/text() | //div[@class='cb-content__wrapper']/h1/text()",
+    "date": "(//div[@class='ab__text'])[2]/text() | //span[@class='date']/text()",
+    "main_content": "//div[@class='be__contents-wrapper'] | //div[@class='welcome-wrapper']"
+  },
+  "welivesecurity": {
+    "title": "//h1[@class='page-headline']/text()",
+    "date": "//p[contains(@class, 'article-info')]/span[1]/text()",
+    "main_content": "//div[@class='article-body']"
+  },
+  "zscaler": {
+    "title": "//div[contains(@class, 'tile-container')]//h1/text()",
+    "date": "//div[contains(@class, 'font-normal')]/text()",
+    "main_content": "//div[@class='default-grid']//div[@class='wysiwyg_module_content__XGnZp']"
+  },
+  "trendmicro_malware": {
+    "title": "//h1[@class='lessen_h1']/text()",
+    "date": "//div[@id='datePub']/text()",
+    "main_content": "//div[@class='articleContainer']"
+  },
+  "trendmicro_spam": {
+    "title": "//h1[@class='lessen_h1']/text()",
+    "date": "//div[@id='datePub']/text()",
+    "main_content": "//div[@class='articleContainer']"
+  },
+  "fsecure": {
+    "title": "//main[@id='main-content']//h1/text()",
+    "date": "//main[@id='main-content']//time/@datetime",
+    "main_content": "//div[@id='article-content']"
+  }
+}

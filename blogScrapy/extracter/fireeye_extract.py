@@ -64,8 +64,8 @@ if __name__ == '__main__':
         tags = []
         # print('tags:', tags)
 
-        date_ele = dom.xpath('//p[@class="dateline"]')
-        date = date_ele[0].xpath('./text()[last()]') if date_ele else ""
+        date = dom.xpath('((//p[@class="dateline"])[1])/text()[last()-1]')
+        date = date[0] if date else ''
 
         # print('date:', date)
 

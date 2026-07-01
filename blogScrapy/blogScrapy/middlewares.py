@@ -128,7 +128,8 @@ class SeleniumMiddleware(object):
 
         # 1. 配置 ChromeOptions
         self.options = Options()
-        # self.options.add_argument('--headless=new')  # 建议开启无头
+        # 开启无头模式
+        # self.options.add_argument('--headless=new')
         self.options.add_argument('--no-sandbox')
         self.options.add_argument('--ignore-certificate-errors')
         self.options.add_experimental_option('excludeSwitches', ['enable-automation', 'enable-logging'])
@@ -137,6 +138,15 @@ class SeleniumMiddleware(object):
         self.options.add_argument('--disable-gpu')
         self.options.add_argument('--disable-dev-shm-usage')
         self.options.add_argument('--window-size=1920x1080')
+
+        # 禁止加载图片提高爬取速率
+        # prefs = {
+        #     "profile.managed_default_content_settings.images": 2
+        # }
+        # self.options.add_experimental_option("prefs", prefs)
+
+        # # 核心策略 2：通过 Blink 渲染引擎参数禁用图片（双重保险）
+        # self.options.add_argument('--blink-settings=imagesEnabled=false')
 
         # 2. 【核心改动】在初始化时，整个爬虫生命周期只拉起“这一个”浏览器进程
         self.browser = webdriver.Chrome(
@@ -202,6 +212,7 @@ class SeleniumMiddleware(object):
                 pass
             return HtmlResponse(url=url, status=403, request=request)
 
+    ### DEPRECATED
     # def process_request(self, request, spider):
     #     url = request.url
     #

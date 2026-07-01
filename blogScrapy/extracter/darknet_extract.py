@@ -13,6 +13,7 @@ import logging
 import os
 from twisted.internet.defer import Deferred
 from typing import TYPE_CHECKING, Any, cast
+from unity import *
 
 # Comment 增加了链接去重功能
 
@@ -61,15 +62,25 @@ if __name__ == '__main__':
         if not title:
             print(f'未获取到{uuid}的文章标题')
 
-        tags = []
+        # tags = []
         # print('tags:', tags)
 
         date = dom.xpath('//time[@class="entry-time"]/@datetime')
         date = date[0] if date else ''
         # print('date:', date)
 
-        main_soup = soup.find(name="div",
-                              class_="entry-content")
+        if not date:
+            print(f'未获取到{uuid}的日期')
+        else:
+            date = format_time_str(date)
+
+        main_soup = soup.find(
+            name="div",
+            attrs={
+                "class": "entry-content",
+                "itemprop": "text"
+            }
+        )
 
         if not main_soup:
             err_blog_num += 1
@@ -79,31 +90,31 @@ if __name__ == '__main__':
 
 
         # 保存图片信息
-        img_infos = []
-        for img in main_soup.find_all(name='img'):
-
-            img_num += 1
-
-            if img.get('src') is None:
-                print(f"OMG, Find a img without src, it's his uuid:{uuid}")
-                continue
-
-            if img.get('data-lazy-src') is not None:
-                image_url = img["data-lazy-src"] if is_absolute_url(img["data-lazy-src"]) else domain + img["data-lazy-src"]
-            else:
-                image_url = img["src"] if is_absolute_url(img["src"]) else domain + img["src"]
-
-
-            img_info = {
-                'image_urls': image_url,
-                'dir': f'main_content/{website_name}/{uuid}/img/',
-                'filename': hash_string(image_url) + '.jpg'
-            }
-
-            img['src'] = 'img/' + img_info['filename']
-            img['alt'] = img_info['image_urls']
-
-            img_infos.append(img_info)
+        # img_infos = []
+        # for img in main_soup.find_all(name='img'):
+        #
+        #     img_num += 1
+        #
+        #     if img.get('src') is None:
+        #         print(f"OMG, Find a img without src, it's his uuid:{uuid}")
+        #         continue
+        #
+        #     if img.get('data-lazy-src') is not None:
+        #         image_url = img["data-lazy-src"] if is_absolute_url(img["data-lazy-src"]) else domain + img["data-lazy-src"]
+        #     else:
+        #         image_url = img["src"] if is_absolute_url(img["src"]) else domain + img["src"]
+        #
+        #
+        #     img_info = {
+        #         'image_urls': image_url,
+        #         'dir': f'main_content/{website_name}/{uuid}/img/',
+        #         'filename': hash_string(image_url) + '.jpg'
+        #     }
+        #
+        #     img['src'] = 'img/' + img_info['filename']
+        #     img['alt'] = img_info['image_urls']
+        #
+        #     img_infos.append(img_info)
 
         # 配置html2text处理器
         main_extracter = html2text.HTML2Text()
@@ -120,13 +131,13 @@ if __name__ == '__main__':
             with open(output_dir + 'info.json', 'w', encoding='utf-8') as f:
                 json.dump({
                 'title': title,
-                'tags': tags,
+                # 'tags': tags,
                 'date': date,
                 'text': text_content
                 }, f, indent=4)
 
-            with open(output_dir + 'img_infos.json', 'w', encoding='utf-8') as f:
-                json.dump(img_infos, f, indent=4)
+            # with open(output_dir + 'img_infos.json', 'w', encoding='utf-8') as f:
+            #     json.dump(img_infos, f, indent=4)
 
         except Exception as e:
             print(f'在保存blog{uuid}的信息时出现错误{str(e)}')

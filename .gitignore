@@ -15,6 +15,7 @@
 /.vscode
 *.zip
 temp_*
+*.bak
 
 __pycache__/
 

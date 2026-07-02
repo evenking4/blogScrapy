@@ -38,7 +38,40 @@ python版本: 3.11.2
                 |- img_infos.json   # report中所有的图片的信息和url
 ```
 
-## 关于使用Selenium爬取图片
+## 常用命令
+注: 下面的命令中的<>代表你需要指定的参数
+
+1. 爬取对应网站所有文章的链接:
+`scrapy crawl <websitename>_link`
+成功执行后会在links文件夹中生成一个对应网站名字的文件夹存储爬取到的链接
+
+2. 爬取一个网站链接对应的网页:
+`scrapy crawl html_crawl -a target=<websitename>`
+成功执行后会在raw_html文件夹中生成一个对应网站名字的文件夹存储爬取到的网页
+
+3. 提取一个网站的标题、日期、主要内容
+`python extracter/common_extract.py <websitename>`
+需要在`payloads/extract_target.json`中预填网页目标元素XPATH信息
+
+
+
+---
+
+### 以下为爬取图片时写的注解，已弃用
+
+---
+
+## 常用命令
+
+1. 提取一个网站的主要内容和图片信息（已弃用）
+`python extracter/<websitename>_extract.py`
+成功执行后会在main_content文件夹中生成一个对应网站名字的文件夹存储report的正文、相关信息、图片信息
+
+2. 爬取一个网站的report的所有图片（已弃用）
+`scrapy crawl img_crawl -a target=<websitename>`
+成功执行后main_content/<websitename>/<uuid>的report如果有图片则会生成一个img文件夹存放图片
+
+## 关于使用Selenium爬取图片（已弃用）
 注：由于该方法爬取图片较慢，请仅针对那些爬取率已为0的网站使用。
 使用方法：
 将settings.py中的DOWNLOADER_MIDDLEWARES中的"blogScrapy.middlewares.SeleniumImageDownloaderMiddleware": 400取消注释，如下所示即可
@@ -51,7 +84,7 @@ DOWNLOADER_MIDDLEWARES = {
 ```
 之后运行img_crawl时开头日志出现`MiddleWare - INFO - Selenium Img Crawl Start...`表示添加成功
 
-## 关于服务器爬取图片的指南（省流版）
+## 关于服务器爬取图片的指南（省流版）（已弃用）
 1. 参考上面配置好环境
 2. 将main_content文件夹放置到对应位置
 3. 参考以下脚本进行爬取
@@ -89,26 +122,3 @@ scrapy crawl img_crawl -a target=trustwave
 scrapy crawl img_crawl -a target=unit42
 scrapy crawl img_crawl -a target=zscaler
 ```
-
-## 常用命令
-注: 下面的命令中的<>代表你需要指定的参数
-
-1. 爬取对应网站所有文章的链接:
-`scrapy crawl <websitename>_link`
-成功执行后会在links文件夹中生成一个对应网站名字的文件夹存储爬取到的链接
-
-2. 爬取一个网站链接对应的网页:
-`scrapy crawl html_crawl -a target=<websitename>`
-成功执行后会在raw_html文件夹中生成一个对应网站名字的文件夹存储爬取到的网页
-
-3. 提取一个网站的主要内容和图片信息（已弃用）
-`python extracter/<websitename>_extract.py`
-成功执行后会在main_content文件夹中生成一个对应网站名字的文件夹存储report的正文、相关信息、图片信息
-
-4. 爬取一个网站的report的所有图片（已弃用）
-`scrapy crawl img_crawl -a target=<websitename>`
-成功执行后main_content/<websitename>/<uuid>的report如果有图片则会生成一个img文件夹存放图片
-
-5. 提取一个网站的标题、日期、主要内容
-`python extracter/common_extract.py <websitename>`
-需要在payloads/extract_target.json中预填网页目标元素XPATH信息
